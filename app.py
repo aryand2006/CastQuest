@@ -150,6 +150,7 @@ def game():
         print(session["shortest_path_list"])
         session["displaying_actors"] = [start_actor]
         session["error"] = 0
+        session["last_correct_actor"] = start_actor
 
         return redirect("/repetitive")
 
@@ -213,8 +214,11 @@ def repetitive():
                 session["error"] = 0
                 
                 print(displaying_actors)
+                if "last_correct_actor" not in session:
+                    session["last_correct_actor"] = session["start_actor"]
                 last_correct_actor = displaying_actors.index(session["last_correct_actor"])
                 displaying_actors = displaying_actors[:last_correct_actor+1]
+                print("YAY", last_correct_actor, displaying_actors)
                 dict_of_movies_and_actors = get_movies_and_actors(session["last_correct_actor"])
                 return jsonify({
                     "message": "You made too many mistakes! Returning to the last correct actor.",

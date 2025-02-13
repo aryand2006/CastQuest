@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Connection Game</title>
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --background: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --text-secondary: #64748b;
+            --border: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --radius: 0.75rem;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: var(--background);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1.5rem;
+            line-height: 1.5;
+            color: var(--text);
+        }
+
+        .container {
+            background: var(--card);
+            padding: 2rem;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            width: 100%;
+            max-width: 600px;
+            position: relative;
+        }
+
+        .game-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .game-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+        }
+
+        .game-subtitle {
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+
+        .timeline {
+            margin-bottom: 2.5rem;
+        }
+
+        .timeline-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .timeline-number {
+            width: 36px;
+            height: 36px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            flex-shrink: 0;
+            margin-right: 1rem;
+            font-size: 0.875rem;
+        }
+
+        .timeline-content {
+            background: var(--background);
+            padding: 1rem 1.25rem;
+            border-radius: var(--radius);
+            flex-grow: 1;
+            font-weight: 500;
+            transition: transform 0.2s ease;
+        }
+
+        .timeline-item:hover .timeline-content {
+            transform: translateX(5px);
+        }
+
+        .selection-area {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .select-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .select-label {
+            font-weight: 600;
+            color: var(--text);
+            font-size: 0.875rem;
+        }
+
+        .select-wrapper {
+            position: relative;
+        }
+
+        .select-wrapper::after {
+            content: '▼';
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            pointer-events: none;
+            font-size: 0.75rem;
+        }
+
+        select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--card);
+            color: var(--text);
+            font-size: 1rem;
+            appearance: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        select:hover {
+            border-color: var(--primary);
+        }
+
+        select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(100%);
+            background: var(--text);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            opacity: 0;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        select:disabled {
+            background: var(--background);
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .game-outcome {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .game-outcome.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .game-outcome-content {
+            text-align: center;
+            animation: scaleIn 0.5s ease-out;
+        }
+
+        .game-outcome-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .game-outcome-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .game-outcome-message {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+        }
+
+        .game-outcome-button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .game-outcome-button:hover {
+            background: var(--primary-hover);
+        }
+
+        .game-outcome.success .game-outcome-icon {
+            color: var(--success);
+        }
+
+        .game-outcome.error .game-outcome-icon {
+            color: var(--error);
+        }
+
+        @keyframes scaleIn {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="game-header">
+            <h1 class="game-title">Movie Connection Game</h1>
+            <p class="game-subtitle">Connect actors through their movies</p>
+        </div>
+        
+        <div class="timeline" id="timeline"></div>
+        
+        <div class="selection-area">
+            <div class="select-group">
+                <label class="select-label" for="movieSelect">Select a Movie</label>
+                <div class="select-wrapper">
+                    <select id="movieSelect"></select>
+                </div>
+            </div>
+            
+            <div class="select-group">
+                <label class="select-label" for="actorSelect">Select an Actor</label>
+                <div class="select-wrapper">
+                    <select id="actorSelect" disabled>
+                        <option value="">Choose a movie first</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <div id="gameWon" class="game-outcome">
+        <div class="game-outcome-content">
+            <div class="game-outcome-icon">🏆</div>
+            <h2 class="game-outcome-title">Congratulations!</h2>
+            <p class="game-outcome-message">You've successfully connected all the actors!</p>
+            <button class="game-outcome-button" onclick="resetGame()">Play Again</button>
+        </div>
+    </div>
+
+    <div id="gameLost" class="game-outcome">
+        <div class="game-outcome-content">
+            <div class="game-outcome-icon">😔</div>
+            <h2 class="game-outcome-title">Game Over</h2>
+            <p class="game-outcome-message">Don't worry! You can always try again.</p>
+            <button class="game-outcome-button" onclick="resetGame()">Try Again</button>
+        </div>
+    </div>
+
+    <script>
+        let gameData = null;
+        let displayingActors = [];
+        let errorCount = 0;
+        let lastValidIndex = 0;
+
+        function showLoading() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        async function fetchData() {
+            showLoading();
+            try {
+                const response = await fetch('/repetitive', {
+                    headers: { Accept: 'application/json' }
+                });
+                if (!response.ok) {
+                    throw new Error('Failed to fetch game data');
+                }
+                return await response.json();
+            } catch (error) {
+                showToast('Error loading game data');
+                throw error;
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function updateTimeline(resetToIndex = null) {
+            const timeline = document.getElementById('timeline');
+            const actorsToDisplay = resetToIndex !== null 
+                ? displayingActors.slice(0, resetToIndex + 1) 
+                : displayingActors;
+            
+            timeline.innerHTML = actorsToDisplay.map((actor, index) => `
+                <div class="timeline-item" style="animation-delay: ${index * 0.1}s">
+                    <div class="timeline-number">${index + 1}</div>
+                    <div class="timeline-content">${actor}</div>
+                </div>
+            `).join('');
+        }
+
+        async function populateGame() {
+            try {
+                gameData = await fetchData();
+                if (gameData.error) {
+                    showToast(gameData.error);
+                    return;
+                }
+
+                displayingActors = gameData.displayingActors;
+                errorCount = 0;
+                lastValidIndex = 0;
+                updateTimeline();
+
+                // Populate movie select
+                const movieSelect = document.getElementById('movieSelect');
+                movieSelect.innerHTML = '<option value="">Select a movie...</option>' +
+                    Object.keys(gameData.dict_of_movies_and_actors)
+                        .sort()
+                        .map(movie => `<option value="${movie}">${movie}</option>`)
+                        .join('');
+
+                // Reset actor select
+                const actorSelect = document.getElementById('actorSelect');
+                actorSelect.innerHTML = '<option value="">Choose a movie first</option>';
+                actorSelect.disabled = true;
+
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function handleActorSelect(actor) {
+            if (!actor) return;
+            
+            showLoading(); 
+            try {
+                const response = await fetch('/repetitive', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ actorClicked: actor })
+                });
+                const data = await response.json();
+
+                if (data.message) {
+                    console.log(data.message);
+                    if (data.message.includes('Congratulations')) {
+                        document.getElementById('gameWon').classList.add('show');
+                    } else if (data.message.includes('Game Over')) {
+                        document.getElementById('gameLost').classList.add('show');
+                        errorCount = 0;
+                    } else if (data.message.includes('Invalid')) {
+                        errorCount++;
+                        if (errorCount === 1) {
+                            lastValidIndex = displayingActors.length - 1;
+                        }
+                        if (errorCount >= 3) {
+                            // Reset timeline to last valid actor
+                            updateTimeline(lastValidIndex);
+                            errorCount = 0;
+                        }
+                        showToast(data.message);
+                    } else {
+                        // Valid move
+                        lastValidIndex = displayingActors.length;
+                        errorCount = 0;
+                        showToast(data.message);
+                    }
+                }
+
+                await populateGame();
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Failed to update actor');
+            }
+        }
+
+        function resetGame() {
+            document.getElementById('gameWon').classList.remove('show');
+            document.getElementById('gameLost').classList.remove('show');
+            errorCount = 0;
+            lastValidIndex = 0;
+            populateGame();
+        }
+
+        // Previous event handler functions remain the same
+        function handleMovieSelect(movie) {
+            const actorSelect = document.getElementById('actorSelect');
+            if (!movie) {
+                actorSelect.innerHTML = '<option value="">Choose a movie first</option>';
+                actorSelect.disabled = true;
+                return;
+            }
+
+            const lastActor = displayingActors[displayingActors.length - 1];
+            const actors = gameData.dict_of_movies_and_actors[movie]
+                .filter(actor => actor !== lastActor)
+                .sort();
+
+            actorSelect.innerHTML = '<option value="">Select an actor...</option>' +
+                actors.map(actor => `<option value="${actor}">${actor}</option>`).join('');
+            actorSelect.disabled = false;
+        }
+
+        // Event Listeners
+        document.getElementById('movieSelect').addEventListener('change', (e) => {
+            handleMovieSelect(e.target.value);
+        });
+
+        document.getElementById('actorSelect').addEventListener('change', (e) => {
+            handleActorSelect(e.target.value);
+        });
+
+        // Initialize the game
+        document.addEventListener('DOMContentLoaded', populateGame);
+    </script>
+</body>
+</html>
