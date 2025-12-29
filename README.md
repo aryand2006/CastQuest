@@ -1,4 +1,4 @@
-# Cast Quest 🎭  
+# Cast Quest 
 
 Cast Quest is a movie-actor connection game that challenges players to find the shortest path between two actors through their shared movie appearances.  
 
